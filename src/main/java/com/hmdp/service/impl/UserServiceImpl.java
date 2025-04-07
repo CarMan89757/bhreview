@@ -89,7 +89,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         String tokenKey = LOGIN_USER_KEY+token;
         stringRedisTemplate.opsForHash().putAll(tokenKey,usermap);
-
+        //不支持为hash指定过期时间，分开写
+        //1.Redis 的设计原则：
+        //在 Redis 中，过期时间是与整个键相关联的。当你为一个键设置过期时间时，整个键及其所有数据都会在过期时间到达后被删除。
+        //哈希（Hash）是 Redis 中的一种数据结构，它存储了字段和值的映射关系。由于过期时间是针对整个键的，而不是针对键内部的某个字段，因此无法单独为哈希中的某个字段设置过期时间。
+        //2.操作的原子性：
+        //如果允许为哈希中的单个字段设置过期时间，那么在实现上需要额外的机制来跟踪每个字段的过期状态，这会增加复杂性和内存开销。
+        //Redis 通过为整个键设置过期时间，简化了过期机制的实现，并保证了操作的原子性。
         stringRedisTemplate.expire(tokenKey,LOGIN_USER_TTL,TimeUnit.MINUTES);
         return Result.ok(token);
     }
